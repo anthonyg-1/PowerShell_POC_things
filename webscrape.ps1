@@ -41,9 +41,7 @@ foreach ($rootUri in $validatedUris) {
             $targetUri = "{0}{1}" -f $rootUri, $childPath
         }
 
-        if ([Uri]::IsWellFormedUriString($targetUri, 1)) {
-            $targetJsUris += $targetUri
-        }
+        if ([Uri]::IsWellFormedUriString($targetUri, 1)) { $targetJsUris += $targetUri }
     }
 
     # Iterate through each file, search for bad strings, create object and add to results array:
