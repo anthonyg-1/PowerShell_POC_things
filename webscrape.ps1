@@ -1,6 +1,5 @@
-#requires -Version 7
-#requires -Module PSTcpIp
 #requires -Module PowerHTML
+#requires -Module PSTcpIp
 
 # Target URIs:
 $uris = @("https://mysite.com")
@@ -32,7 +31,9 @@ foreach ($rootUri in $uris) {
             $targetUri = "{0}{1}" -f $rootUri, $childPath
         }
 
-        $targetJsUris += $targetUri
+        if ([Uri]::IsWellFormedUriString($targetUri, 1)) {
+            $targetJsUris += $targetUri
+        }
     }
 
     # Iterate through each file, search for bad strings, create object and add to results array:
