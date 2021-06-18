@@ -1,15 +1,25 @@
+#require -Version 7
 #requires -Module PowerHTML
 #requires -Module PSTcpIp
 
 # Target URIs:
-$uris = @("https://mysite.com")
+$uris = "https://mysite.com", "https://mysecondsite.com"
 
-# Bad strings we want to look for:
-$searchStrings = @("SECRET", "PASSWORD")
+# Things to search for as regex:
+$searchStrings = @("\w*PASSWORD*")
+
+$validatedUris = @()
+$uris | ForEach-Object {
+    if ([Uri]::IsWellFormedUriString($_, 1)) {
+        $uri = [Uri]::new($_)
+        if (Test-TcpConnection -DNSHostName $uri.Authority -Port $uri.Port -Quiet) {
+            $validatedUris += $uri
+        }
+    }
+}
 
 $results = @()
-foreach ($rootUri in $uris) {
-
+foreach ($rootUri in $validatedUris) {
     # Get and deserialize HTML response:
     $data = Invoke-WebRequest -Uri $rootUri
     $htmlObjects = $data.Content | ConvertFrom-Html
@@ -44,8 +54,19 @@ foreach ($rootUri in $uris) {
             $response = Invoke-RestMethod -Uri $targetUri
             if ($null -ne $response) {
                 $searchStrings | ForEach-Object {
-                    if ($response -match $_) {
-                        $results += [PSCustomObject]@{Uri = $targetUri; Found = $_ }
+                    $result = Select-String -InputObject $response -Pattern $_ -AllMatches
+
+                    if ($null -ne $result) {
+                        $result.Matches | ForEach-Object {
+                            $resultObject = [PSCustomObject]@{RootUri = $rootUri; FullPath = $targetUri; Found = $_.Value }
+
+                            $searchResult = $results |
+                            Where-Object -FilterScript { ($_.FullPath -eq $resultObject.FullPath) -and ($_.Found -eq $resultObject.Found) }
+
+                            if ($null -eq $searchResult) {
+                                $results += $resultObject
+                            }
+                        }
                     }
                 }
             }
