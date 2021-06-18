@@ -2,11 +2,12 @@
 #requires -Module PowerHTML
 #requires -Module PSTcpIp
 
+
 # Target URIs:
-$uris = "https://mysite.com", "https://mysecondsite.com"
+$uris = "https://mysite.com"
 
 # Things to search for as regex:
-$searchStrings = @("\w*PASSWORD*")
+$searchStrings = @("\w*PASSWORD_*")
 
 $validatedUris = @()
 $uris | ForEach-Object {
@@ -41,7 +42,9 @@ foreach ($rootUri in $validatedUris) {
             $targetUri = "{0}{1}" -f $rootUri, $childPath
         }
 
-        if ([Uri]::IsWellFormedUriString($targetUri, 1)) { $targetJsUris += $targetUri }
+        if ([Uri]::IsWellFormedUriString($targetUri, 1)) {
+            $targetJsUris += $targetUri
+        }
     }
 
     # Iterate through each file, search for bad strings, create object and add to results array:
@@ -49,8 +52,18 @@ foreach ($rootUri in $validatedUris) {
         $targetUri = [Uri]::new($_)
 
         if (Test-TcpConnection -DNSHostName $targetUri.Authority -Port $targetUri.Port -Quiet) {
-            $response = Invoke-RestMethod -Uri $targetUri
-            if ($null -ne $response) {
+            [bool]$webRequestSuccessful = $false
+            $response = $null
+
+            try {
+                $response = Invoke-RestMethod -Uri $targetUri -ErrorAction Stop -ErrorVariable irmError
+                $webRequestSuccessful = $true
+            }
+            catch {
+                $webRequestSuccessful = $false
+            }
+
+            if ($webRequestSuccessful) {
                 $searchStrings | ForEach-Object {
                     $result = Select-String -InputObject $response -Pattern $_ -AllMatches
 
@@ -59,7 +72,8 @@ foreach ($rootUri in $validatedUris) {
                             $resultObject = [PSCustomObject]@{RootUri = $rootUri; FullPath = $targetUri; Found = $_.Value }
 
                             $searchResult = $results |
-                            Where-Object -FilterScript { ($_.FullPath -eq $resultObject.FullPath) -and ($_.Found -eq $resultObject.Found) }
+                            Where-Object FullPath -eq $resultObject.FullPath |
+                            Where-Object Found -eq $resultObject.Found
 
                             if ($null -eq $searchResult) {
                                 $results += $resultObject
