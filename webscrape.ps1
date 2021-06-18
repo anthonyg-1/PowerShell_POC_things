@@ -2,12 +2,11 @@
 #requires -Module PowerHTML
 #requires -Module PSTcpIp
 
-
 # Target URIs:
-$uris = "https://mysite.com"
+$uris = "https://mysite.com", "https://myothersite.com"
 
 # Things to search for as regex:
-$searchStrings = @("\w*PASSWORD_*")
+$searchStrings = @("\w*PASSWORD_*", "\w*secret_*")
 
 $validatedUris = @()
 $uris | ForEach-Object {
@@ -65,15 +64,15 @@ foreach ($rootUri in $validatedUris) {
 
             if ($webRequestSuccessful) {
                 $searchStrings | ForEach-Object {
-                    $result = Select-String -InputObject $response -Pattern $_ -AllMatches
+                    $result = Select-String -InputObject $response -Pattern $_ -AllMatches -CaseSensitive
 
                     if ($null -ne $result) {
                         $result.Matches | ForEach-Object {
                             $resultObject = [PSCustomObject]@{RootUri = $rootUri; FullPath = $targetUri; Found = $_.Value }
 
                             $searchResult = $results |
-                            Where-Object FullPath -eq $resultObject.FullPath |
-                            Where-Object Found -eq $resultObject.Found
+                                Where-Object FullPath -eq $resultObject.FullPath |
+                                    Where-Object Found -eq $resultObject.Found
 
                             if ($null -eq $searchResult) {
                                 $results += $resultObject
