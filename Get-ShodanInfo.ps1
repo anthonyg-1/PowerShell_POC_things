@@ -1,11 +1,12 @@
 
 function Get-ShodanInfo {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'IPAddress')]
     [Alias('nrich', 'shodan')]
     [OutputType([PSCustomObject])]
     Param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0, ParameterSetName = "HostName")][ValidateLength(1, 250)][Alias('ComputerName', 'Name', 'h')][String]$HostName
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0, ParameterSetName = "IPAddress")][ValidateNotNullOrEmpty()][Alias('i', 'ip')][System.Net.IPAddress]$IPAddress,
+        [Parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true, Position = 0, ParameterSetName = "HostName")][ValidateLength(1, 250)][Alias('ComputerName', 'Name', 'h')][String]$HostName
     )
     BEGIN {
         $moduleDependency = "PSTcpIp"
@@ -18,30 +19,56 @@ function Get-ShodanInfo {
         [Uri]$baseUri = "https://internetdb.shodan.io"
 
         # For Shodan's API throttling:
-        [int]$secondsToWait = 60
+        [int]$secondsToWait = 1
+
+        # output class:
+        class ShodanInfo {
+            [string]$IPAddress
+            [string[]]$HostNames
+            [int[]]$Ports
+            [string[]]$CPEs
+            [string[]]$Vulnerabilities
+            [System.Security.Cryptography.X509Certificates.X509Certificate2]$TlsCertificate
+        }
+
     }
     PROCESS {
         Start-Sleep -Seconds $secondsToWait
 
-        $tcpConnectionTestResults = Test-TcpConnection -DNSHostName $HostName -Port 80, 443 -ShowConnectedOnly
+        [string]$targetHostName = ""
+        [string]$targetIpAddress = ""
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$tlsCert = $null
 
-        $targetHostName = $HostName
+        if ($PSBoundParameters.ContainsKey("IPAddress")) {
+            $targetIpAddress = $IPAddress.ToString()
 
-        $targetIpAddress = $tcpConnectionTestResults | Select-Object -ExpandProperty IPAddress -First 1
+            $tlsCert = Get-TlsCertificate -HostName $targetIpAddress -ErrorVariable gtlsErr 2>$null
+
+            $tlsCert = Get-TlsCertificate -HostName $targetIpAddress 2>$null
+        }
+        else {
+            $tcpConnectionTestResults = Test-TcpConnection -DNSHostName $HostName -Port 80, 443 -ShowConnectedOnly
+            $targetHostName = $HostName
+            $targetIpAddress = $tcpConnectionTestResults | Select-Object -ExpandProperty IPAddress -First 1
+
+            $tlsCert = Get-TlsCertificate -HostName $targetHostName 2>$null
+        }
+
+        $targetUri = "{0}{1}" -f $baseUri, $targetIpAddress
+
         if ($targetIpAddress) {
-            $targetUri = "{0}{1}" -f $baseUri, $targetIpAddress
-
             try {
                 $response = Invoke-RestMethod -Method Get -Uri $targetUri -SkipCertificateCheck -ErrorAction Stop
 
-                [PSCustomObject]@{
-                    IPAddress       = $targetIpAddress
-                    HostNames       = $response.hostnames
-                    Ports           = $response.ports
-                    CPEs            = $response.CPEs
-                    Vulnerabilities = $response.vulns
-                    TlsInformation  = (Get-TlsCertificate -HostName $targetHostName)
-                }
+                $shodanInfo = [ShodanInfo]::new()
+                $shodanInfo.IPAddress = $targetIpAddress
+                $shodanInfo.HostNames = $response.hostnames
+                $shodanInfo.Ports = $response.ports
+                $shodanInfo.CPEs = $response.CPEs
+                $shodanInfo.Vulnerabilities = $response.vulns
+                $shodanInfo.TlsCertificate = $tlsCert
+
+                return $shodanInfo
             }
             catch {
                 Write-Error -Exception $_.Exception -ErrorAction Stop
