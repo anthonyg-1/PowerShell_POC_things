@@ -16,6 +16,26 @@ function Get-CveInformation {
 
         [Uri]$baseUri = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId="
 
+
+        function Invoke-TimedWait {
+            [CmdletBinding()]
+            [OutputType([void])]
+            Param
+            (
+                [Parameter(Mandatory = $true, Position = 0)][Int]$Seconds,
+                [Parameter(Mandatory = $true, Position = 1)][String]$Activity
+            )
+            PROCESS {
+                for ($i = $Seconds; $i -ge 0; $i--) {
+                    $percentComplete = (($Seconds - $i) / $Seconds) * 100
+                    Write-Progress -Activity "Waiting $Seconds seconds prior to $Activity.." -Status "$i seconds remaining" -PercentComplete $percentComplete
+                    Start-Sleep -Seconds 1
+                }
+
+                Write-Host "Sleep cycle complete. Initiating $Activity now..."
+            }
+        }
+
         # Output class definition:
         class CveInformation {
             [string]$CveID
@@ -37,6 +57,9 @@ function Get-CveInformation {
     }
     PROCESS {
         $targetUri = "{0}{1}" -f $baseUri, $cveId
+
+        Invoke-TimedWait -Seconds $secondsToWait -Activity "REST API request"
+
         $response = Invoke-RestMethod -Method Get -Uri $targetUri
 
         Start-Sleep -Seconds $secondsToWait
