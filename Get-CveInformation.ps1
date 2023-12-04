@@ -1,19 +1,39 @@
 function Get-CveInformation {
     [CmdletBinding(DefaultParameterSetName = 'CveID')]
     [Alias('gcvei', 'cvei')]
-    [OutputType([PSCustomObject])]
+    [OutputType([CveInformation])]
     Param
     (
         [Parameter(Mandatory = $true,
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
             Position = 0,
-            ParameterSetName = "CveID")][ValidateLEngth(8, 24)][String]$CveID
+            ParameterSetName = "CveID")][ValidateLength(8, 24)][String]$CveID
     )
     BEGIN {
         # For NIST's API throttling:
         [int]$secondsToWait = 60
+
         [Uri]$baseUri = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId="
+
+        # Output class definition:
+        class CveInformation {
+            [string]$CveID
+            [Nullable[DateTime]]$Published
+            [Nullable[DateTime]]$LastModified
+            [string]$Description
+            [float]$BaseScore
+            [string]$BaseSeverity
+            [float]$ExploitabilityScore
+            [float]$ImpactScore
+            [string]$AttackVector
+            [string]$AttackComplexity
+            [string]$PrivilegesRequired
+            [string]$UserInteraction
+            [string]$ConfidentialityImpact
+            [string]$IntegrityImpact
+            [string]$AvailabilityImpact
+        }
     }
     PROCESS {
         $targetUri = "{0}{1}" -f $baseUri, $cveId
@@ -32,22 +52,23 @@ function Get-CveInformation {
         $cvssData = $metrics.cvssMetricV31.cvssData
         $impactScore = $metrics.cvssMetricV31.impactScore
 
-        [PSCustomObject]@{
-            CveID                 = $cveId
-            Published             = $published
-            LastModified          = $lastModified
-            Description           = $description
-            BaseScore             = $cvssData.baseScore
-            BaseSeverity          = (($null -ne $cvssData.baseSeverity) ? $cvssData.baseSeverity.ToLower() : $null)
-            ExploitabilityScore   = $exploitabilityScore
-            ImpactScore           = $impactScore
-            AttackVector          = (($null -ne $cvssData.attackVector) ? $cvssData.attackVector.ToLower() : $null)
-            AttackComplexity      = (($null -ne $cvssData.attackComplexity) ? $cvssData.attackComplexity.ToLower() : $null)
-            PrivilegesRequired    = (($null -ne $cvssData.privilegesRequired) ? $cvssData.privilegesRequired.ToLower() : $null)
-            UserInteraction       = (($null -ne $cvssData.userInteraction) ? $cvssData.userInteraction.ToLower() : $null)
-            ConfidentialityImpact = (($null -ne $cvssData.confidentialityImpact) ? $cvssData.confidentialityImpact.ToLower() : $null)
-            IntegrityImpact       = (($null -ne $cvssData.integrityImpact) ? $cvssData.integrityImpact.ToLower() : $null)
-            AvailabilityImpact    = (($null -ne $cvssData.availabilityImpact) ? $cvssData.availabilityImpact.ToLower() : $null)
-        }
+        $cveInfo = [CveInformation]::new()
+        $cveInfo.CveID = $cveId
+        $cveInfo.Published = $published
+        $cveInfo.LastModified = $lastModified
+        $cveInfo.Description = $description
+        $cveInfo.BaseScore = $cvssData.baseScore
+        $cveInfo.BaseSeverity = (($null -ne $cvssData.baseSeverity) ? $cvssData.baseSeverity.ToLower() : $null)
+        $cveInfo.ExploitabilityScore = $exploitabilityScore
+        $cveInfo.ImpactScore = $impactScore
+        $cveInfo.AttackVector = (($null -ne $cvssData.attackVector) ? $cvssData.attackVector.ToLower() : $null)
+        $cveInfo.AttackComplexity = (($null -ne $cvssData.attackComplexity) ? $cvssData.attackComplexity.ToLower() : $null)
+        $cveInfo.PrivilegesRequired = (($null -ne $cvssData.privilegesRequired) ? $cvssData.privilegesRequired.ToLower() : $null)
+        $cveInfo.UserInteraction = (($null -ne $cvssData.userInteraction) ? $cvssData.userInteraction.ToLower() : $null)
+        $cveInfo.ConfidentialityImpact = (($null -ne $cvssData.confidentialityImpact) ? $cvssData.confidentialityImpact.ToLower() : $null)
+        $cveInfo.IntegrityImpact = (($null -ne $cvssData.integrityImpact) ? $cvssData.integrityImpact.ToLower() : $null)
+        $cveInfo.AvailabilityImpact = (($null -ne $cvssData.availabilityImpact) ? $cvssData.availabilityImpact.ToLower() : $null)
+
+        return $cveInfo
     }
 }
