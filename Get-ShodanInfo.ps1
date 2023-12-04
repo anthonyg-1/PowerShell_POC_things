@@ -1,7 +1,7 @@
 function Get-ShodanInfo {
     [CmdletBinding(DefaultParameterSetName = 'IPAddress')]
     [Alias('nrich', 'shodan')]
-    [OutputType([PSCustomObject])]
+    [OutputType([ShodanInfo])]
     Param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 0, ParameterSetName = "IPAddress")][ValidateNotNullOrEmpty()][Alias('i', 'ip')][System.Net.IPAddress]$IPAddress,
