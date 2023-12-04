@@ -13,7 +13,6 @@ function Get-CveInformation {
     BEGIN {
         # For NIST's API throttling:
         [int]$secondsToWait = 60
-        ull
         [Uri]$baseUri = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId="
     }
     PROCESS {
