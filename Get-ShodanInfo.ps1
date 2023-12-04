@@ -1,3 +1,4 @@
+
 function Get-ShodanInfo {
     [CmdletBinding(DefaultParameterSetName = 'IPAddress')]
     [Alias('nrich', 'shodan')]
@@ -33,6 +34,8 @@ function Get-ShodanInfo {
 
     }
     PROCESS {
+        $shodanInfo = $null
+
         Start-Sleep -Seconds $secondsToWait
 
         [string]$targetHostName = ""
@@ -68,8 +71,6 @@ function Get-ShodanInfo {
                 $shodanInfo.HasVulnerabilities = ($response.vulns -ge 1)
                 $shodanInfo.Vulnerabilities = $response.vulns
                 $shodanInfo.TlsCertificate = $tlsCert
-
-                return $shodanInfo
             }
             catch {
                 Write-Error -Exception $_.Exception -ErrorAction Stop
@@ -80,5 +81,7 @@ function Get-ShodanInfo {
             $WebException = New-Object -TypeName System.Net.WebException -ArgumentList $webExceptionMessage
             Write-Error -Exception $WebException -Category ConnectionError -ErrorAction Continue
         }
+
+        return $shodanInfo
     }
 }
