@@ -1,4 +1,3 @@
-
 function Get-ShodanInfo {
     [CmdletBinding(DefaultParameterSetName = 'IPAddress')]
     [Alias('nrich', 'shodan')]
@@ -27,6 +26,7 @@ function Get-ShodanInfo {
             [string[]]$HostNames
             [int[]]$Ports
             [string[]]$CPEs
+            [bool]$HasVulnerabilities
             [string[]]$Vulnerabilities
             [System.Security.Cryptography.X509Certificates.X509Certificate2]$TlsCertificate
         }
@@ -65,6 +65,7 @@ function Get-ShodanInfo {
                 $shodanInfo.HostNames = $response.hostnames
                 $shodanInfo.Ports = $response.ports
                 $shodanInfo.CPEs = $response.CPEs
+                $shodanInfo.HasVulnerabilities = ($response.vulns -ge 1)
                 $shodanInfo.Vulnerabilities = $response.vulns
                 $shodanInfo.TlsCertificate = $tlsCert
 
