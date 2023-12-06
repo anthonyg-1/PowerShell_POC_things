@@ -1,6 +1,6 @@
 function Get-ShodanInformation {
     [CmdletBinding(DefaultParameterSetName = 'IPAddress')]
-    [Alias('nrich', 'shodan', 'Get-ShodanInfo')]
+    [Alias('psnrich', 'shodan', 'Get-ShodanInfo')]
     [OutputType([ShodanInfo])]
     Param
     (
