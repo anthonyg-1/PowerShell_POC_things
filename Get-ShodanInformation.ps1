@@ -28,6 +28,7 @@ function Get-ShodanInformation {
             [string[]]$CPEs
             [bool]$HasVulnerabilities
             [string[]]$Vulnerabilities
+            [int]$VulnerabilityCount
             [System.Security.Cryptography.X509Certificates.X509Certificate2]$TlsCertificate
         }
 
@@ -58,6 +59,9 @@ function Get-ShodanInformation {
 
         $targetUri = "{0}{1}" -f $baseUri, $targetIpAddress
 
+        [int]$vulnCount = $response.vulns.Count
+        [bool]$vulnsDetected = $vulnCount -ge 1
+
         if ($targetIpAddress) {
             try {
                 $response = Invoke-RestMethod -Method Get -Uri $targetUri -SkipCertificateCheck -ErrorAction Stop
@@ -67,7 +71,8 @@ function Get-ShodanInformation {
                 $shodanInfo.HostNames = $response.hostnames
                 $shodanInfo.Ports = $response.ports
                 $shodanInfo.CPEs = $response.CPEs
-                $shodanInfo.HasVulnerabilities = ($response.vulns -ge 1)
+                $shodanInfo.HasVulnerabilities = $vulnsDetected
+                $shodanInfo.VulnerabilityCount = $response.vulns.Count
                 $shodanInfo.Vulnerabilities = $response.vulns
                 $shodanInfo.TlsCertificate = $tlsCert
             }
