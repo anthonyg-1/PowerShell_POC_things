@@ -1,16 +1,29 @@
-
 function Test-Kentico {
     [CmdletBinding()]
     [Alias('tk')]
-    [OutputType([bool])]
+    [OutputType([bool], [KenticoAuditResult])]
     Param
     (
 
         [Parameter(Mandatory = $true,
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
-            Position = 0)][Alias('u')][Uri]$Uri
+            Position = 0)][Alias('u')][Uri]$Uri,
+
+        [Parameter(Mandatory = $false, Position = 1)][Alias('d')][Switch]$Detailed
     )
+    BEGIN {
+        class KenticoAuditResult {
+            [Uri]$BaseUri
+            [bool]$KenticoDetected
+            [bool]$SoapEndpointFound
+            [Uri]$SoapEndpointUri
+            [bool]$LogonPageFound
+            [Uri]$LogonPageUri
+            [bool]$HandlerFound
+            [Uri]$HandlerUri
+        }
+    }
     PROCESS {
         [bool]$kenticoDetected = $false
 
@@ -44,10 +57,32 @@ function Test-Kentico {
             $handlerExists = $false
         }
 
-        if ($soapEndpointExists -or $logonPageExists -or $handlerExists) {
-            $kenticoDetected = $true
+        $kenticoAuditResult = [KenticoAuditResult]::new()
+        $kenticoAuditResult.BaseUri = $Uri
+        $kenticoAuditResult.KenticoDetected = $kenticoDetected
+
+        if ($kenticoDetected) {
+            if ($soapEndpointExists) {
+                $kenticoAuditResult.SoapEndpointFound = $true
+                $kenticoAuditResult.SoapEndpointUri = $soapUri
+            }
+
+            if ($logonPageExists) {
+                $kenticoAuditResult.LogonPageFound = $true
+                $kenticoAuditResult.LogonPageUri = $logonUri
+            }
+
+            if ($handlerExists) {
+                $kenticoAuditResult.HandlerFound = $true
+                $kenticoAuditResult.HandlerUri = $handlerUri
+            }
         }
 
-        return $kenticoDetected
+        if ($PSBoundParameters.ContainsKey("Detailed")) {
+            return $kenticoAuditResult
+        }
+        else {
+            return $kenticoDetected
+        }
     }
 }
