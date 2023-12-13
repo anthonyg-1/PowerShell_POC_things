@@ -1,6 +1,9 @@
 #requires -Version 7
 #requires -Module PSTcpIp
 
+$domainListFilePath = "domains.txt"
+$outputFilePath = "KenticoDetection.csv"
+
 function Test-Kentico {
     [CmdletBinding()]
     [Alias('tk')]
@@ -89,8 +92,6 @@ function Test-Kentico {
     }
 }
 
-$domainListFilePath = "domains.txt"
-$outputFilePath = "KenticoDetection.csv"
 
 $domainList = Get-Content -Path $domainListFilePath
 
@@ -106,8 +107,8 @@ $kenticoScanResults = $discoveredTargets | ForEach-Object {
         $baseUri = "http://{0}" -f $_.HostName
     }
 
-    Test-Kentico -Uri $baseUri -Detailed 
-} | Where-Object KenticoDetected 
+    Test-Kentico -Uri $baseUri -Detailed
+} | Where-Object KenticoDetected
 
 Clear-Host
 
