@@ -12,8 +12,19 @@ function Test-Kentico {
         [Parameter(Mandatory = $false, Position = 1)][Alias('d')][Switch]$Detailed
     )
     BEGIN {
+        $moduleDependency = "PSTcpIp"
+        if ($null -eq (Get-Module -Name $moduleDependency -ListAvailable)) {
+            $argExcepMessage = "Unable to find the following module dependency: {0}" -f $moduleDependency
+            $ArgumentException = New-Object -TypeName System.ArgumentException -ArgumentList $argExcepMessage
+            Write-Error -Exception $ArgumentException -ErrorAction Stop
+        }
+
         class KenticoAuditResult {
             [Uri]$BaseUri
+            [bool]$NetworkAccessConfirmed
+            [string]$IPAddress
+            [string]$HostName
+            [int]$Port
             [bool]$KenticoDetected
             [bool]$SoapEndpointFound
             [Uri]$SoapEndpointUri
@@ -25,6 +36,28 @@ function Test-Kentico {
     }
     PROCESS {
         [bool]$kenticoDetected = $false
+
+        $connectionTestResults = Test-TcpConnection -DNSHostName $Uri.Host -Port $Uri.Port
+        [bool]$canConnect = $connectionTestResults.Connected
+
+        $kenticoAuditResult = [KenticoAuditResult]::new()
+        $kenticoAuditResult.BaseUri = $Uri.AbsoluteUri
+        $kenticoAuditResult.HostName = $Uri.Host
+        $kenticoAuditResult.Port = $Uri.Port
+
+        # if target is not found our incaccessible, short circuit via return:
+        if (-not($canConnect)) {
+            if ($PSBoundParameters.ContainsKey("Detailed")) {
+                return $kenticoAuditResult
+            }
+            else {
+                return $kenticoDetected
+            }
+        }
+
+        # Connection confirmed, proceed with enumeration:
+        $kenticoAuditResult.NetworkAccessConfirmed = $true
+        $kenticoAuditResult.IPAddress = $connectionTestResults.IPAddress
 
         # SOAP endpoint test first:
         $soapUri = "{0}{1}" -f $Uri, "CMSPages/Staging/SyncServer.asmx?wsdl"
@@ -60,8 +93,6 @@ function Test-Kentico {
             $kenticoDetected = $true
         }
 
-        $kenticoAuditResult = [KenticoAuditResult]::new()
-        $kenticoAuditResult.BaseUri = $Uri
         $kenticoAuditResult.KenticoDetected = $kenticoDetected
 
         if ($kenticoDetected) {
