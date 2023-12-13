@@ -128,7 +128,6 @@ function Test-Kentico {
 }
 
 
-
 $domainList = Get-Content -Path $domainListFilePath
 
 $discoveredTargets = $domainList | Invoke-DnsEnumeration | Test-TcpConnection -Port 80, 443 -WhereConnected
