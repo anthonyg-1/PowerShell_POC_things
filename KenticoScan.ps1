@@ -62,6 +62,10 @@ function Test-Kentico {
             $handlerExists = $false
         }
 
+        if ($soapEndpointExists -or $logonPageExists -or $handlerExists) {
+            $kenticoDetected = $true
+        }
+
         $kenticoAuditResult = [KenticoAuditResult]::new()
         $kenticoAuditResult.BaseUri = $Uri
         $kenticoAuditResult.KenticoDetected = $kenticoDetected
@@ -97,8 +101,8 @@ $domainList = Get-Content -Path $domainListFilePath
 
 $discoveredTargets = $domainList | Invoke-DnsEnumeration | Test-TcpConnection -Port 80, 443 -WhereConnected
 
-$kenticoScanResults = $discoveredTargets | ForEach-Object {
 
+$kenticoScanResults = $discoveredTargets | ForEach-Object {
     [string]$baseUri = ""
     if ($_.Port -eq 443) {
         $baseUri = "https://{0}" -f $_.HostName
