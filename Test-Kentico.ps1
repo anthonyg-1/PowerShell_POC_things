@@ -4,7 +4,6 @@ function Test-Kentico {
     [OutputType([bool], [KenticoAuditResult])]
     Param
     (
-
         [Parameter(Mandatory = $true,
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
