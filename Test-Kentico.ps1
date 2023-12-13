@@ -56,6 +56,10 @@ function Test-Kentico {
             $handlerExists = $false
         }
 
+        if ($soapEndpointExists -or $logonPageExists -or $handlerExists) {
+            $kenticoDetected = $true
+        }
+
         $kenticoAuditResult = [KenticoAuditResult]::new()
         $kenticoAuditResult.BaseUri = $Uri
         $kenticoAuditResult.KenticoDetected = $kenticoDetected
