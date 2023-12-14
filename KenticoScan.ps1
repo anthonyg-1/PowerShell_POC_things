@@ -69,7 +69,11 @@ function Test-Kentico {
         $soapUri = "{0}{1}" -f $Uri, "CMSPages/Staging/SyncServer.asmx?wsdl"
         [bool]$soapEndpointExists = $false
         try {
-            $soapEndpointExists = ($null -ne (Invoke-WebRequest -Method Get -Uri $soapUri -ErrorAction Stop | Select-Object -ExpandProperty Content | Select-String -Pattern "SyncServer"))
+            $wsdlData = Invoke-RestMethod -Method Get -Uri $soapUri -ErrorAction Stop
+
+            if ($wsdlData.definitions.binding) {
+                $soapEndpointExists = $true
+            }
         }
         catch {
             $soapEndpointExists = $false
