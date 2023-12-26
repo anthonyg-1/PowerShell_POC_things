@@ -15,8 +15,6 @@ function Get-CveInformation {
         [int]$secondsToWait = 60
 
         [Uri]$baseUri = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId="
-
-
         function Invoke-TimedWait {
             [CmdletBinding()]
             [OutputType([void])]
@@ -56,9 +54,9 @@ function Get-CveInformation {
         }
     }
     PROCESS {
-        $targetUri = "{0}{1}" -f $baseUri, $cveId
+        $targetUri = "{0}{1}" -f $baseUri, $CveID
 
-        Invoke-TimedWait -Seconds $secondsToWait -Activity "REST API request"
+        Invoke-TimedWait -Seconds $secondsToWait -Activity "NIST CVE REST API request"
 
         try {
             $response = Invoke-RestMethod -Method Get -Uri $targetUri -SkipHttpErrorCheck -SkipCertificateCheck -ErrorAction Stop
@@ -71,7 +69,7 @@ function Get-CveInformation {
 
             $metrics = $cveData.metrics
             $exploitabilityScore = $metrics.cvssMetricV31.exploitabilityScore
-            $cvssData = $metrics.cvssMetricV31.cvssData
+            $cvssData = ($metrics.cvssMetricV31.cvssData)[0]
             $impactScore = $metrics.cvssMetricV31.impactScore
 
             $cveInfo = [CveInformation]::new()
@@ -79,10 +77,10 @@ function Get-CveInformation {
             $cveInfo.Published = $published
             $cveInfo.LastModified = $lastModified
             $cveInfo.Description = $description
-            $cveInfo.BaseScore = $cvssData.baseScore
+            $cveInfo.BaseScore = ($cvssData.baseScore)[0]
             $cveInfo.BaseSeverity = (($null -ne $cvssData.baseSeverity) ? $cvssData.baseSeverity.ToLower() : $null)
-            $cveInfo.ExploitabilityScore = $exploitabilityScore
-            $cveInfo.ImpactScore = $impactScore
+            $cveInfo.ExploitabilityScore = ($exploitabilityScore)[0]
+            $cveInfo.ImpactScore = ($impactScore)[0]
             $cveInfo.AttackVector = (($null -ne $cvssData.attackVector) ? $cvssData.attackVector.ToLower() : $null)
             $cveInfo.AttackComplexity = (($null -ne $cvssData.attackComplexity) ? $cvssData.attackComplexity.ToLower() : $null)
             $cveInfo.PrivilegesRequired = (($null -ne $cvssData.privilegesRequired) ? $cvssData.privilegesRequired.ToLower() : $null)
@@ -98,3 +96,5 @@ function Get-CveInformation {
         }
     }
 }
+
+"CVE-2023-26044" | Get-CveInformation
