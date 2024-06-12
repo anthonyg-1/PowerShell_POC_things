@@ -3,7 +3,7 @@ function Invoke-WebCrawl {
     [Alias('iwc')]
     [OutputType([PSCustomObject])]
     param (
-        [Parameter(Mandatory = $true, Position = 0)][Alias('u', 'bu')][Uri]$BaseUri,
+        [Parameter(Mandatory = $true, Position = 0)][Alias('Uri', 'u', 'bu')][Uri]$BaseUri,
         [Parameter(Mandatory = $false, Position = 1)][Alias('d')][int]$Depth = 2,
         [Parameter(Mandatory = $false, Position = 2)][Alias('h')][System.Collections.Hashtable]$Headers,
         [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "Include")][Alias('i', 'il')][String[]]$IncludeHosts,
