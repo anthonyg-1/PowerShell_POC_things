@@ -6,8 +6,8 @@ function Invoke-WebCrawl {
         [Parameter(Mandatory = $true, Position = 0)][Alias('u', 'bu')][Uri]$BaseUri,
         [Parameter(Mandatory = $false, Position = 1)][Alias('d')][int]$Depth = 2,
         [Parameter(Mandatory = $false, Position = 2)][Alias('h')][System.Collections.Hashtable]$Headers,
-        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "Include")][Alias('i', 'il')][String[]]$IncludeList,
-        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "Exclude")][Alias('e', 'el')][String[]]$ExcludeList
+        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "Include")][Alias('i', 'il')][String[]]$IncludeHosts,
+        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "Exclude")][Alias('e', 'el')][String[]]$ExcludeHosts
     )
     BEGIN {
         if (($PSVersionTable.PSVersion.Major -lt 7) -and ($PSVersionTable.PSVersion.Minor -lt 4)) {
@@ -15,15 +15,13 @@ function Invoke-WebCrawl {
             Write-Error -Exception $ArgumentException -ErrorAction Stop
         }
 
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
         function Get-WebLinkStatus {
             param (
-                [Parameter(Mandatory = $true, Position = 0)][Uri]$Uri,
-                [Parameter(Mandatory = $false, Position = 1)][int]$Depth = 2,
-                [Parameter(Mandatory = $false, Position = 2)][System.Collections.Hashtable]$Headers,
-                [Parameter(Mandatory = $false, Position = 3)][String[]]$IncludeList,
-                [Parameter(Mandatory = $false, Position = 3)][String[]]$ExcludeList,
+                [Parameter(Mandatory = $true)][Uri]$Uri,
+                [Parameter(Mandatory = $false)][int]$Depth = 2,
+                [Parameter(Mandatory = $false)][System.Collections.Hashtable]$Headers,
+                [Parameter(Mandatory = $false)][String[]]$IncludeHosts,
+                [Parameter(Mandatory = $false)][String[]]$ExcludeHosts,
                 [hashtable]$Visited = @{}
             )
 
@@ -88,14 +86,14 @@ function Invoke-WebCrawl {
                     $parsedUri = [Uri]::new($link)
                     $targetHost = $parsedUri.Host
 
-                    if ($PSBoundParameters.ContainsKey("IncludeList")) {
-                        if ($targetHost -in $IncludeList) {
-                            Get-WebLinkStatus -Uri $link -Depth ($Depth - 1) -Visited $Visited -Headers $Headers -IncludeList $IncludeList
+                    if ($PSBoundParameters.ContainsKey("IncludeHosts")) {
+                        if ($targetHost -in $IncludeHosts) {
+                            Get-WebLinkStatus -Uri $link -Depth ($Depth - 1) -Visited $Visited -Headers $Headers -IncludeHosts $IncludeHosts
                         }
                     }
-                    elseif ($PSBoundParameters.ContainsKey("ExcludeList")) {
-                        if ($targetHost -notin $ExcludeList) {
-                            Get-WebLinkStatus -Uri $link -Depth ($Depth - 1) -Visited $Visited -Headers $Headers -ExcludeList $ExcludeList
+                    elseif ($PSBoundParameters.ContainsKey("ExcludeHosts")) {
+                        if ($targetHost -notin $ExcludeHosts) {
+                            Get-WebLinkStatus -Uri $link -Depth ($Depth - 1) -Visited $Visited -Headers $Headers -ExcludeHosts $ExcludeHosts
                         }
                     }
                     else {
@@ -106,11 +104,11 @@ function Invoke-WebCrawl {
         }
     }
     PROCESS {
-        if ($PSBoundParameters.ContainsKey("IncludeList")) {
-            Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers -IncludeList $IncludeList
+        if ($PSBoundParameters.ContainsKey("IncludeHosts")) {
+            Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers -IncludeHosts $IncludeHosts
         }
-        elseif ($PSBoundParameters.ContainsKey("ExcludeList")) {
-            Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers -ExcludeList $ExcludeList
+        elseif ($PSBoundParameters.ContainsKey("ExcludeHosts")) {
+            Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers -ExcludeHosts $ExcludeHosts
         }
         else {
             Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers
