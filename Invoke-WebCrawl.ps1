@@ -59,6 +59,7 @@ function Invoke-WebCrawl {
                     [PSCustomObject]@{
                         BaseUri           = $BaseUri.AbsoluteUri
                         Uri               = $targetUri
+                        HostName          = $targetHost
                         StatusCode        = 520
                         StatusDescription = $_.Exception.Message
                     }
@@ -68,6 +69,7 @@ function Invoke-WebCrawl {
                 [PSCustomObject]@{
                     BaseUri           = $BaseUri.AbsoluteUri
                     Uri               = $targetUri
+                    HostName          = $targetHost
                     StatusCode        = $response.StatusCode
                     StatusDescription = $response.StatusDescription
                 }
