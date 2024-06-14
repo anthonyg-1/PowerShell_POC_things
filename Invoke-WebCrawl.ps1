@@ -35,13 +35,16 @@ function Invoke-WebCrawl {
 
                 $Visited[$targetUri] = $true
 
-                $iwrParams = @{Uri        = $Uri
-                    Method                = "Get"
-                    UseBasicParsing       = $true
-                    SkipCertificateCheck  = $true
-                    SkipHttpErrorCheck    = $true
-                    ErrorAction           = "Stop"
-                    AllowInsecureRedirect = $true
+                $iwrParams = @{
+                    Uri                            = $Uri
+                    Method                         = "Get"
+                    UseBasicParsing                = $true
+                    SkipCertificateCheck           = $true
+                    SkipHttpErrorCheck             = $true
+                    ErrorAction                    = "Stop"
+                    AllowInsecureRedirect          = $true
+                    AllowUnencryptedAuthentication = $true
+                    UseDefaultCredentials          = $true
                 }
 
                 if ($PSBoundParameters.ContainsKey("Headers")) {
