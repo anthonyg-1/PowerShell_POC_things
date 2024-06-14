@@ -51,36 +51,35 @@ function Invoke-WebCrawl {
                 $parsedUri = [Uri]::new($targetUri)
                 $targetHost = $parsedUri.Host
 
-                # $reponse = $null
+                [PSObject]$response = $null
+                [int]$statusCode = 0
+                [string]$statusDescription = ""
                 try {
                     $response = Invoke-WebRequest @iwrParams
+                    $statusCode = $response.StatusCode
+                    $statusDescription = $response.StatusDescription
                 }
                 catch {
-                    [PSCustomObject]@{
+                    $statusCode = 520
+                    $statusDescription = $_.Exception.Message
+                }
+
+                $webCrawlResult = ([PSCustomObject]@{
                         BaseUri           = $BaseUri.AbsoluteUri
                         Uri               = $targetUri
                         HostName          = $targetHost
-                        StatusCode        = 520
-                        StatusDescription = $_.Exception.Message
-                    }
-                }
+                        StatusCode        = $statusCode
+                        StatusDescription = $statusDescription
+                    })
 
-
-                [PSCustomObject]@{
-                    BaseUri           = $BaseUri.AbsoluteUri
-                    Uri               = $targetUri
-                    HostName          = $targetHost
-                    StatusCode        = $response.StatusCode
-                    StatusDescription = $response.StatusDescription
-                }
-
+                Write-Output -InputObject $webCrawlResult
 
                 # If the depth is 0, we stop here
                 if ($Depth -le 0) {
                     return
                 }
 
-                # Extract links from the HTML content
+                # Extract links from the HTML content:
                 $links = $response.Links | Where-Object { $_.href -match "^http" } | Select-Object -ExpandProperty href
                 foreach ($link in $links) {
                     # Recursively visit each link
