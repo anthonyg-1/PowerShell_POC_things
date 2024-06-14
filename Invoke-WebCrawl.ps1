@@ -77,9 +77,9 @@ function Invoke-WebCrawl {
 
                 Write-Output -InputObject $webCrawlResult
 
-                # If the depth is 0, we stop here
+                # If the depth is 0, we stop here:
                 if ($Depth -le 0) {
-                    return
+                    return;
                 }
 
                 # Extract links from the HTML content
