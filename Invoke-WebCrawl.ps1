@@ -82,37 +82,55 @@ function Invoke-WebCrawl {
                 # Extract links from the HTML content
                 $links = $response.Links | Where-Object { $_.href -match "^http" } | Select-Object -ExpandProperty href
                 foreach ($link in $links) {
-                    # Recursively visit each link
-
+                    # Recursively visit each link:
                     $parsedUri = [Uri]::new($link)
                     $targetHost = $parsedUri.Host
 
+                    $gwlsParamsInner = @{
+                        Uri     = $link
+                        Depth   = ($Depth - 1)
+                        Visited = $Visited
+                    }
+
+                    if ($PSBoundParameters.ContainsKey("Headers")) {
+                        $gwlsParamsInner.Add("Headers", $Headers)
+                    }
+
                     if ($PSBoundParameters.ContainsKey("IncludeHosts")) {
                         if ($targetHost -in $IncludeHosts) {
-                            Get-WebLinkStatus -Uri $link -Depth ($Depth - 1) -Visited $Visited -Headers $Headers -IncludeHosts $IncludeHosts
+                            Get-WebLinkStatus @gwlsParamsInner -IncludeHosts $IncludeHosts
                         }
                     }
                     elseif ($PSBoundParameters.ContainsKey("ExcludeHosts")) {
                         if ($targetHost -notin $ExcludeHosts) {
-                            Get-WebLinkStatus -Uri $link -Depth ($Depth - 1) -Visited $Visited -Headers $Headers -ExcludeHosts $ExcludeHosts
+                            Get-WebLinkStatus @gwlsParamsInner -ExcludeHosts $ExcludeHosts
                         }
                     }
                     else {
-                        Get-WebLinkStatus -Uri $link -Depth ($Depth - 1) -Visited $Visited -Headers $Headers
+                        Get-WebLinkStatus @gwlsParamsInner
                     }
                 }
             }
         }
     }
     PROCESS {
+        $gwlsParamsOuter = @{
+            Uri   = $BaseUri
+            Depth = $Depth
+        }
+
+        if ($PSBoundParameters.ContainsKey("Headers")) {
+            $gwlsParamsOuter.Add("Headers", $Headers)
+        }
+
         if ($PSBoundParameters.ContainsKey("IncludeHosts")) {
-            Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers -IncludeHosts $IncludeHosts
+            Get-WebLinkStatus @gwlsParamsOuter -IncludeHosts $IncludeHosts
         }
         elseif ($PSBoundParameters.ContainsKey("ExcludeHosts")) {
-            Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers -ExcludeHosts $ExcludeHosts
+            Get-WebLinkStatus @gwlsParamsOuter -ExcludeHosts $ExcludeHosts
         }
         else {
-            Get-WebLinkStatus -Uri $BaseUri -Depth $Depth -Headers $Headers
+            Get-WebLinkStatus @gwlsParamsOuter
         }
     }
 }
