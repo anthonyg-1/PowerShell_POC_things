@@ -79,7 +79,7 @@ function Invoke-WebCrawl {
                     return
                 }
 
-                # Extract links from the HTML content:
+                # Extract links from the HTML content
                 $links = $response.Links | Where-Object { $_.href -match "^http" } | Select-Object -ExpandProperty href
                 foreach ($link in $links) {
                     # Recursively visit each link
