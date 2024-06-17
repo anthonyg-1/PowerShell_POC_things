@@ -6,8 +6,8 @@ function Invoke-WebCrawl {
         [Parameter(Mandatory = $true, Position = 0)][Alias('Uri', 'u', 'bu')][Uri]$BaseUri,
         [Parameter(Mandatory = $false, Position = 1)][Alias('d')][int]$Depth = 2,
         [Parameter(Mandatory = $false, Position = 2)][Alias('h')][System.Collections.Hashtable]$Headers,
-        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "Include")][Alias('i', 'il')][String[]]$IncludeHosts,
-        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = "Exclude")][Alias('e', 'el')][String[]]$ExcludeHosts
+        [Parameter(Mandatory = $true, Position = 3, ParameterSetName = "Include")][Alias('i', 'il')][String[]]$IncludeHosts,
+        [Parameter(Mandatory = $true, Position = 3, ParameterSetName = "Exclude")][Alias('e', 'el')][String[]]$ExcludeHosts
     )
     BEGIN {
         if (($PSVersionTable.PSVersion.Major -lt 7) -and ($PSVersionTable.PSVersion.Minor -lt 4)) {
@@ -119,7 +119,7 @@ function Invoke-WebCrawl {
     PROCESS {
         $gwlsParamsOuter = @{
             Uri   = $BaseUri
-            Depth = $Depth
+            Depth = ($Depth - 1)
         }
 
         if ($PSBoundParameters.ContainsKey("Headers")) {
